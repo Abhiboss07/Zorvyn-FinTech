@@ -1,0 +1,18 @@
+# ═══════════════════════════════════════════════════════
+# Zorvyn FinTech — Production Profile
+# ═══════════════════════════════════════════════════════
+
+spring:
+  jpa:
+    show-sql: false
+
+server:
+  error:
+    include-message: never
+    include-stacktrace: never
+
+logging:
+  level:
+    com.zorvyn.fintech: INFO
+    org.springframework: WARN
+    org.hibernate: WARN

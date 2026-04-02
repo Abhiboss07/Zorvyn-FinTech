@@ -1,0 +1,109 @@
+# ═══════════════════════════════════════════════════════
+# Zorvyn FinTech — Application Configuration
+# ═══════════════════════════════════════════════════════
+
+spring:
+  application:
+    name: zorvyn-fintech
+
+  # ── PostgreSQL (JPA + Flyway) ──
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/zorvyn_fintech}
+    username: ${SPRING_DATASOURCE_USERNAME:zorvyn}
+    password: ${SPRING_DATASOURCE_PASSWORD:zorvyn_secret_2024}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 30000
+      connection-timeout: 20000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  # ── MongoDB Atlas ──
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/zorvyn_audit}
+      auto-index-creation: true
+
+    # ── Redis ──
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      timeout: 5000
+
+  # ── Jackson ──
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: non_null
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
+
+# ── JWT Configuration ──
+app:
+  jwt:
+    secret: ${JWT_SECRET:a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2}
+    expiration-ms: ${JWT_EXPIRATION_MS:900000}
+    refresh-secret: ${JWT_REFRESH_SECRET:f0e1d2c3b4a5f6e7d8c9b0a1f2e3d4c5b6a7f8e9d0c1b2a3f4e5d6c7b8a9f0e1}
+    refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
+
+  # ── Encryption ──
+  encryption:
+    key: ${ENCRYPTION_KEY:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+    key-previous: ${ENCRYPTION_KEY_PREVIOUS:}
+
+  # ── CORS ──
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+
+  # ── Rate Limiting ──
+  rate-limit:
+    requests: ${RATE_LIMIT_REQUESTS:100}
+    duration-minutes: ${RATE_LIMIT_DURATION_MINUTES:15}
+    auth-requests: ${RATE_LIMIT_AUTH_REQUESTS:10}
+    auth-duration-minutes: ${RATE_LIMIT_AUTH_DURATION_MINUTES:15}
+
+  # ── Session ──
+  session:
+    timeout-minutes: 30
+
+# ── Actuator ──
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
+
+# ── OpenAPI / Swagger ──
+springdoc:
+  api-docs:
+    path: /api/docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
