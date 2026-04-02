@@ -25,3 +25,4 @@ logs/
 # ── Application ──
 /out/
 /target/
+.jdk21/
