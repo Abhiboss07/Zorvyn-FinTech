@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # ── PostgreSQL Database ──
+  postgres:
+    image: postgres:16-alpine
+    container_name: zorvyn-postgres
+    environment:
+      POSTGRES_DB: zorvyn_fintech
+      POSTGRES_USER: zorvyn
+      POSTGRES_PASSWORD: zorvyn_secret_2024
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - zorvyn-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zorvyn -d zorvyn_fintech"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis Cache & Session Store ──
+  redis:
+    image: redis:7-alpine
+    container_name: zorvyn-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - zorvyn-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes
+
+  # ── Application ──
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: zorvyn-app
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/zorvyn_fintech
+      SPRING_DATASOURCE_USERNAME: zorvyn
+      SPRING_DATASOURCE_PASSWORD: zorvyn_secret_2024
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - zorvyn-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  zorvyn-network:
+    driver: bridge
