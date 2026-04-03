@@ -37,7 +37,7 @@ spring:
   # ── MongoDB Atlas ──
   data:
     mongodb:
-      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/zorvyn_audit}
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://zorvyn:zorvyn_secret_2024@localhost:27017/zorvyn_audit?authSource=admin}
       auto-index-creation: true
 
     # ── Redis ──

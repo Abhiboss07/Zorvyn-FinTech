@@ -38,6 +38,26 @@ services:
       retries: 5
     command: redis-server --appendonly yes
 
+  # ── MongoDB for Audit Logs ──
+  mongodb:
+    image: mongo:7
+    container_name: zorvyn-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: zorvyn
+      MONGO_INITDB_ROOT_PASSWORD: zorvyn_secret_2024
+      MONGO_INITDB_DATABASE: zorvyn_audit
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - zorvyn-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # ── Application ──
   app:
     build:
@@ -55,10 +75,13 @@ services:
       SPRING_DATASOURCE_PASSWORD: zorvyn_secret_2024
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_MONGODB_URI: mongodb://zorvyn:zorvyn_secret_2024@mongodb:27017/zorvyn_audit?authSource=admin
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      mongodb:
         condition: service_healthy
     networks:
       - zorvyn-network
@@ -66,6 +89,7 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  mongodb_data:
 
 networks:
   zorvyn-network:
