@@ -33,12 +33,14 @@ public class UserService {
         this.auditService = auditService;
     }
 
+    @Transactional(readOnly = true)
     public UserResponse getUserById(UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
         return UserResponse.fromEntity(user);
     }
 
+    @Transactional(readOnly = true)
     public Page<UserResponse> listUsers(Pageable pageable) {
         return userRepository.findByIsActiveTrue(pageable)
                 .map(UserResponse::fromEntity);

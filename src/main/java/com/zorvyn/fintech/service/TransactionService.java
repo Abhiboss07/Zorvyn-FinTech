@@ -129,9 +129,16 @@ public class TransactionService {
         User approver = userRepository.findById(approverId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", approverId));
 
-        // Execute fund movement
+        // BUG #4 FIX: Re-verify balance at approval time (may have changed since creation)
         if (txn.getFromAccount() != null) {
-            Account from = txn.getFromAccount();
+            UUID fromAccountId = txn.getFromAccount().getId();
+            Account from = accountRepository.findById(fromAccountId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Account", "id", fromAccountId));
+            if (from.getBalance().compareTo(txn.getAmount()) < 0) {
+                throw new InsufficientBalanceException(
+                        "Insufficient balance at approval time. Available: $" + from.getBalance().toPlainString()
+                                + ", Required: $" + txn.getAmount().toPlainString());
+            }
             from.setBalance(from.getBalance().subtract(txn.getAmount()));
             accountRepository.save(from);
         }
@@ -144,12 +151,12 @@ public class TransactionService {
         txn.setStatus(Constants.TXN_STATUS_COMPLETED);
         txn.setApprovedBy(approver);
         txn.setApprovedAt(Instant.now());
-        txn = transactionRepository.save(txn);
+        Transaction savedTxn = transactionRepository.save(txn);
 
         auditService.log(approverId.toString(), Constants.AUDIT_TRANSACTION_APPROVE, "transaction",
-                txnId.toString(), Map.of("amount", txn.getAmount()), ipAddress, userAgent);
+                txnId.toString(), Map.of("amount", savedTxn.getAmount()), ipAddress, userAgent);
 
-        return TransactionResponse.fromEntity(txn);
+        return TransactionResponse.fromEntity(savedTxn);
     }
 
     @Transactional
@@ -173,12 +180,14 @@ public class TransactionService {
         return TransactionResponse.fromEntity(txn);
     }
 
+    @Transactional(readOnly = true)
     public TransactionResponse getTransaction(UUID txnId) {
         Transaction txn = transactionRepository.findById(txnId)
                 .orElseThrow(() -> new ResourceNotFoundException("Transaction", "id", txnId));
         return TransactionResponse.fromEntity(txn);
     }
 
+    @Transactional(readOnly = true)
     public Page<TransactionResponse> listTransactions(UUID userId, String status, Pageable pageable) {
         Page<Transaction> page;
         if (userId != null && status != null) {

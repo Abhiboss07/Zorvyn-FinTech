@@ -15,7 +15,7 @@ public final class SecurityUtils {
     public static UUID getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
-            return null;
+            throw new com.zorvyn.fintech.exception.AuthenticationException("Not authenticated");
         }
         return UUID.fromString(auth.getName());
     }
